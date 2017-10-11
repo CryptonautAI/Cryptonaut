@@ -31,7 +31,7 @@ contract MintingERC20 is ERC20 {
         minters[_newMinter] = true;
     }
 
-    function removeMinter(address _minter) onlyOwner{
+    function removeMinter(address _minter) onlyOwner {
         minters[_minter] = false;
     }
 

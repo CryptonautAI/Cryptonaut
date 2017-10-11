@@ -93,10 +93,25 @@ contract UptickICO is Uptick, Multivest {
         return amount;
     }
 
+    function setICOPeriod(uint256 since, uint256 till) onlyOwner {
+        require(since < till);
+        icoSince = since;
+        icoTill = till;
+    }
+
     function transferEthers() onlyOwner {
         require(address(etherHolderAddress) != 0x0);
 
         etherHolderAddress.transfer(this.balance);
     }
+
+    function hardCap() returns(uint256){
+        return hardCap;
+    }
+
+    function icoSince() returns(uint256){
+        return icoSince;
+    }
+
 
 }
