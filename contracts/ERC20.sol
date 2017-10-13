@@ -1,10 +1,11 @@
 pragma solidity ^0.4.13;
 
 import './Ownable.sol';
+import './AbstractLockedAddress.sol';
 
 contract tokenRecipient { function receiveApproval(address _from, uint256 _value, address _token, bytes _extraData); }
 
-contract ERC20 is Ownable {
+contract ERC20 is Ownable, AbstractLockedAddress {
     /* Public variables of the token */
     string public standard;
 
@@ -24,12 +25,19 @@ contract ERC20 is Ownable {
 
     mapping (address => mapping (address => uint256)) public allowance;
 
+    mapping (address => bool) public lockedAddresses;
+
     /* This generates a public event on the blockchain that will notify clients */
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed _owner, address indexed _spender, uint _value);
 
     modifier onlyPayloadSize(uint numwords) {
         assert(msg.data.length == numwords * 32 + 4);
+        _;
+    }
+
+    modifier fromUnlockedAddresses(address _address) {
+        require(lockedAddresses[_address] != true);
         _;
     }
 
@@ -71,6 +79,7 @@ contract ERC20 is Ownable {
 
     function transferInternal(address _from, address _to, uint256 value) internal returns (bool success) {
         if (value == 0) {
+            Transfer(_from, _to, 0);
             return true;
         }
 
@@ -90,6 +99,14 @@ contract ERC20 is Ownable {
         return true;
     }
 
+    function setLockedAddress(address _address, bool lock) {
+        lockedAddresses[_address] = lock;
+    }
+
+    function isAddressLocked(address _address) returns(bool){
+        return lockedAddresses[_address] == true;
+    }
+
     /* public methods */
     function totalSupply() returns (uint256) {
         return initialSupply;
@@ -99,7 +116,7 @@ contract ERC20 is Ownable {
         return balances[_address];
     }
 
-    function transfer(address _to, uint256 _value) onlyPayloadSize(2) returns (bool) {
+    function transfer(address _to, uint256 _value) onlyPayloadSize(2) fromUnlockedAddresses(msg.sender) returns (bool) {
         require(locked == false);
 
         bool status = transferInternal(msg.sender, _to, _value);
@@ -109,7 +126,7 @@ contract ERC20 is Ownable {
         return true;
     }
 
-    function approve(address _spender, uint256 _value) returns (bool success) {
+    function approve(address _spender, uint256 _value) fromUnlockedAddresses(msg.sender) returns (bool success) {
         if(locked) {
             return false;
         }
@@ -120,7 +137,7 @@ contract ERC20 is Ownable {
         return true;
     }
 
-    function approveAndCall(address _spender, uint256 _value, bytes _extraData) returns (bool success) {
+    function approveAndCall(address _spender, uint256 _value, bytes _extraData) fromUnlockedAddresses(msg.sender) returns (bool success) {
         if (locked) {
             return false;
         }
@@ -133,7 +150,7 @@ contract ERC20 is Ownable {
         }
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
+    function transferFrom(address _from, address _to, uint256 _value) fromUnlockedAddresses(_from) returns (bool success) {
         if (locked) {
             return false;
         }

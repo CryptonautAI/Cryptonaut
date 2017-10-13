@@ -1,28 +1,26 @@
 pragma solidity ^0.4.13;
 
 import './Ownable.sol';
+import './AbstractLockedAddress.sol';
 
 contract Multivest is Ownable {
     /* public variables */
     mapping(address => bool) public allowedMultivests;
+    mapping(address => uint256) public allowedContributors;
 
     /* events */
     event MultivestSet(address multivest);
     event MultivestUnset(address multivest);
 
-    event Debug(string s, address v);
-    event DebugU(string s, uint256 v);
-    event DebugB(string s, bytes32 v);
-
-    /* modifier */
-    modifier onlyPayloadSize(uint numwords) {
-        assert(msg.data.length == numwords * 32 + 4);
-        _;
-    }
+    AbstractLockedAddress public lockedAddress;
 
     /* constructor */
     function Multivest(address multivest) {
         allowedMultivests[multivest] = true;
+    }
+
+    function setLockedAddress(AbstractLockedAddress value) onlyOwner {
+        lockedAddress = value;
     }
 
     /* public methods */
@@ -36,9 +34,24 @@ contract Multivest is Ownable {
 
     function buy(address _address, uint256 value) internal returns (bool);
 
-    function multivestBuy(bytes32 hash, uint8 v, bytes32 r, bytes32 s) payable {
-        require(hash == sha3(msg.sender));
+    function acceptBuy(address _address, uint256 value) {
+        require(allowedMultivests[_address] == true);
+        allowedContributors[_address] = value;
+    }
+
+    function burn(address _address) {
+        require(lockedAddress.isAddressLocked(_address));
+        allowedContributors[_address] = 0;
+    }
+
+    function multivestBuy(bytes32 hash, uint8 v, bytes32 r, bytes32 s, bool locked) payable {
+        require(hash == sha3(msg.sender, locked));
         require(allowedMultivests[verify(hash, v, r, s)] == true);
+        require(allowedContributors[msg.sender] >= msg.value);
+
+        if (locked == true) {
+            lockedAddress.setLockedAddress(msg.sender, true);
+        }
 
         bool status = buy(msg.sender, msg.value);
 

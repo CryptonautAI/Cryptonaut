@@ -26,8 +26,4 @@ contract Uptick is MintingERC20 {
         locked = _locked;
     }
 
-    function maxSupply() returns(uint256){
-        return maxSupply;
-    }
-
 }

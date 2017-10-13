@@ -60,7 +60,7 @@ contract UptickICO is Uptick, Multivest {
             return false;
         }
 
-        if (totalSupply() + amount >= softCap) {
+        if ((totalSupply() + amount >= softCap) && (icoTill - icoSince == 2678400)) {
             icoTill += 604800;// additional 7 days if the softCap is reached before the end of 31 days;
         }
 
@@ -104,14 +104,5 @@ contract UptickICO is Uptick, Multivest {
 
         etherHolderAddress.transfer(this.balance);
     }
-
-    function hardCap() returns(uint256){
-        return hardCap;
-    }
-
-    function icoSince() returns(uint256){
-        return icoSince;
-    }
-
 
 }

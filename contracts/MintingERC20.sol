@@ -36,13 +36,18 @@ contract MintingERC20 is ERC20 {
     }
 
     function mint(address _addr, uint256 _amount) onlyMinters returns (uint256) {
+        if (locked == true) {
+            return uint256(0);
+        }
         if (_amount == uint256(0)) {
+            return uint256(0);
+        }
+        if (initialSupply + _amount < initialSupply){
             return uint256(0);
         }
         if (totalSupply() + _amount > maxSupply) {
             return uint256(0);
         }
-
         initialSupply += _amount;
         balances[_addr] += _amount;
         Transfer(this, _addr, _amount);

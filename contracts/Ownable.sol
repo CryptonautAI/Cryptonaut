@@ -26,6 +26,11 @@ contract Ownable {
         _;
     }
 
+    modifier onlyPayloadSize(uint numwords) {
+        assert(msg.data.length == numwords * 32 + 4);
+        _;
+    }
+
     /**
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
      * @param newOwner The address to transfer ownership to.
