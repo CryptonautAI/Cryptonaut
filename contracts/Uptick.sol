@@ -22,7 +22,7 @@ contract Uptick is MintingERC20 {
         tokenPrice = _tokenPrice;
     }
 
-    function setLocked(bool _locked) onlyOwner {
+    function setLocked(bool _locked) public onlyOwner {
         locked = _locked;
     }
 

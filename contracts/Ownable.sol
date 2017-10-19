@@ -7,17 +7,13 @@ pragma solidity ^0.4.13;
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Ownable {
+
+    //Variables
     address public owner;
 
-    /**
-     * @dev The Ownable constructor sets the original `owner` of the contract to the sender
-     * account.
-     */
-    function Ownable() {
-        owner = msg.sender;
-    }
+    address public newOwner;
 
-
+    //    Modifiers
     /**
      * @dev Throws if called by any account other than the owner.
      */
@@ -26,23 +22,25 @@ contract Ownable {
         _;
     }
 
-    modifier onlyPayloadSize(uint numwords) {
-        assert(msg.data.length == numwords * 32 + 4);
-        _;
+    /**
+     * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+     * account.
+     */
+    function Ownable() public {
+        owner = msg.sender;
     }
 
     /**
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
-     * @param newOwner The address to transfer ownership to.
+     * @param _newOwner The address to transfer ownership to.
      */
-    address newOwner;
-    function transferOwnership(address _newOwner) onlyOwner {
-        if (_newOwner != address(0)) {
-            newOwner = _newOwner;
-        }
+
+    function transferOwnership(address _newOwner) public onlyOwner {
+        require(_newOwner != address(0));
+        newOwner = _newOwner;
     }
 
-    function acceptOwnership() {
+    function acceptOwnership() public {
         if (msg.sender == newOwner) {
             owner = newOwner;
         }

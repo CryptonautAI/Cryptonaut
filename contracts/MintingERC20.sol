@@ -11,6 +11,11 @@ contract MintingERC20 is ERC20 {
     mapping (address => bool) public minters;
     uint256 public maxSupply;
 
+    modifier onlyMinters () {
+        require(true == minters[msg.sender]);
+        _;
+    }
+
     function MintingERC20(
         uint256 _initialSupply,
         uint256 _maxSupply,
@@ -21,21 +26,20 @@ contract MintingERC20 is ERC20 {
         bool _locked
     )
         ERC20(_initialSupply, _tokenName, _decimals, _symbol, _transferAllSupplyToOwner, _locked)
-
     {
         minters[msg.sender] = true;
         maxSupply = _maxSupply;
     }
 
-    function addMinter(address _newMinter) onlyOwner {
+    function addMinter(address _newMinter) public onlyOwner {
         minters[_newMinter] = true;
     }
 
-    function removeMinter(address _minter) onlyOwner {
+    function removeMinter(address _minter) public onlyOwner {
         minters[_minter] = false;
     }
 
-    function mint(address _addr, uint256 _amount) onlyMinters returns (uint256) {
+    function mint(address _addr, uint256 _amount) public onlyMinters returns (uint256) {
         if (locked == true) {
             return uint256(0);
         }
@@ -53,10 +57,5 @@ contract MintingERC20 is ERC20 {
         Transfer(this, _addr, _amount);
 
         return _amount;
-    }
-
-    modifier onlyMinters () {
-        require(true == minters[msg.sender]);
-        _;
     }
 }

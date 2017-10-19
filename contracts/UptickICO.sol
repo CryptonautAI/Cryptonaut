@@ -60,7 +60,7 @@ contract UptickICO is Uptick, Multivest {
             return false;
         }
 
-        if ((totalSupply() + amount >= softCap) && (icoTill - icoSince == 2678400)) {
+        if ((totalSupply() + amount >= softCap) && (icoTill - icoSince <= 2678400)) {
             icoTill += 604800;// additional 7 days if the softCap is reached before the end of 31 days;
         }
 
@@ -93,13 +93,13 @@ contract UptickICO is Uptick, Multivest {
         return amount;
     }
 
-    function setICOPeriod(uint256 since, uint256 till) onlyOwner {
+    function setICOPeriod(uint256 since, uint256 till) public onlyOwner {
         require(since < till);
         icoSince = since;
         icoTill = till;
     }
 
-    function transferEthers() onlyOwner {
+    function transferEthers() public onlyOwner {
         require(address(etherHolderAddress) != 0x0);
 
         etherHolderAddress.transfer(this.balance);

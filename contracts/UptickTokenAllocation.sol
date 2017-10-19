@@ -7,9 +7,9 @@ import './UptickICO.sol';
 
 contract UptickTokenAllocation is Ownable {
 
-    uint256 public constant MONTH_SECONDS = 2629744;
-
     UptickICO public uptickICO;
+
+    uint256 public constant MONTH_SECONDS = 2629744;
 
     bool public isTokensDistributed = false;
 
@@ -55,16 +55,11 @@ contract UptickTokenAllocation is Ownable {
 
     }
 
-    function setUptickICO(address _uptickICO) onlyOwner {
+    function setUptickICO(address _uptickICO) public onlyOwner {
         uptickICO = UptickICO(_uptickICO);
     }
 
-    function setTeamAllocation(
-        uint8 teamsPercentage,
-        uint256 teamsPeriod,
-        uint256 teamCliff,
-        address[] teamAddresses
-    ) internal returns (bool) {
+    function setTeamAllocation(uint8 teamsPercentage, uint256 teamsPeriod, uint256 teamCliff, address[] teamAddresses) internal returns (bool) {
 
         if (teamsPercentage < 1) {
             return false;
@@ -112,7 +107,7 @@ contract UptickTokenAllocation is Ownable {
         return true;
     }
 
-    function allocateTokens(){
+    function allocateTokens() public {
         require(address(uptickICO) != 0x0);
 
         if (isTokensDistributed == false) {

@@ -17,9 +17,9 @@ contract ERC20 is Ownable, AbstractLockedAddress {
 
     uint256 public initialSupply;
 
-    bool public locked;
-
     uint256 public creationBlock;
+
+    bool public locked;
 
     mapping (address => uint256) public balances;
 
@@ -29,6 +29,7 @@ contract ERC20 is Ownable, AbstractLockedAddress {
 
     /* This generates a public event on the blockchain that will notify clients */
     event Transfer(address indexed from, address indexed to, uint256 value);
+
     event Approval(address indexed _owner, address indexed _spender, uint _value);
 
     modifier onlyPayloadSize(uint numwords) {
@@ -44,28 +45,27 @@ contract ERC20 is Ownable, AbstractLockedAddress {
     /* Initializes contract with initial supply tokens to the creator of the contract */
     function ERC20(
         uint256 _initialSupply,
-        string tokenName,
-        uint8 decimalUnits,
-        string tokenSymbol,
-        bool transferAllSupplyToOwner,
+        string _tokenName,
+        uint8 _decimalUnits,
+        string _tokenSymbol,
+        bool _transferAllSupplyToOwner,
         bool _locked
     ) {
         standard = 'ERC20 0.1';
 
         initialSupply = _initialSupply;
 
-        if (transferAllSupplyToOwner) {
+        if (_transferAllSupplyToOwner) {
             setBalance(msg.sender, initialSupply);
-        }
-        else {
+        } else {
             setBalance(this, initialSupply);
         }
 
-        name = tokenName;
+        name = _tokenName;
         // Set the name for display purposes
-        symbol = tokenSymbol;
+        symbol = _tokenSymbol;
         // Set the symbol for display purposes
-        decimals = decimalUnits;
+        decimals = _decimalUnits;
         // Amount of decimals for display purposes
         locked = _locked;
         creationBlock = block.number;
@@ -73,50 +73,50 @@ contract ERC20 is Ownable, AbstractLockedAddress {
 
     /* internal balances */
 
-    function setBalance(address holder, uint256 amount) internal {
-        balances[holder] = amount;
+    function setBalance(address _holder, uint256 _amount) internal {
+        balances[_holder] = _amount;
     }
 
-    function transferInternal(address _from, address _to, uint256 value) internal returns (bool success) {
-        if (value == 0) {
+    function transferInternal(address _from, address _to, uint256 _value) internal returns (bool success) {
+        if (_value == 0) {
             Transfer(_from, _to, 0);
             return true;
         }
 
-        if (balances[_from] < value) {
+        if (balances[_from] < _value) {
             return false;
         }
 
-        if (balances[_to] + value <= balances[_to]) {
+        if (balances[_to] + _value <= balances[_to]) {
             return false;
         }
 
-        setBalance(_from, balances[_from] - value);
-        setBalance(_to, balances[_to] + value);
+        setBalance(_from, balances[_from] - _value);
+        setBalance(_to, balances[_to] + _value);
         
-        Transfer(_from, _to, value);
+        Transfer(_from, _to, _value);
 
         return true;
     }
 
-    function setLockedAddress(address _address, bool lock) {
-        lockedAddresses[_address] = lock;
-    }
-
-    function isAddressLocked(address _address) returns(bool){
-        return lockedAddresses[_address] == true;
+    function setLockedAddress(address _address, bool _lock) {
+        lockedAddresses[_address] = _lock;
     }
 
     /* public methods */
-    function totalSupply() returns (uint256) {
+    function isAddressLocked(address _address) public constant returns(bool) {
+        return lockedAddresses[_address] == true;
+    }
+
+    function totalSupply() public constant returns (uint256) {
         return initialSupply;
     }
 
-    function balanceOf(address _address) returns (uint256) {
+    function balanceOf(address _address) public constant returns (uint256) {
         return balances[_address];
     }
 
-    function transfer(address _to, uint256 _value) onlyPayloadSize(2) fromUnlockedAddresses(msg.sender) returns (bool) {
+    function transfer(address _to, uint256 _value) public onlyPayloadSize(2) fromUnlockedAddresses(msg.sender) returns (bool) {
         require(locked == false);
 
         bool status = transferInternal(msg.sender, _to, _value);
@@ -126,7 +126,7 @@ contract ERC20 is Ownable, AbstractLockedAddress {
         return true;
     }
 
-    function approve(address _spender, uint256 _value) fromUnlockedAddresses(msg.sender) returns (bool success) {
+    function approve(address _spender, uint256 _value) public fromUnlockedAddresses(msg.sender) returns (bool success) {
         if(locked) {
             return false;
         }
@@ -137,7 +137,7 @@ contract ERC20 is Ownable, AbstractLockedAddress {
         return true;
     }
 
-    function approveAndCall(address _spender, uint256 _value, bytes _extraData) fromUnlockedAddresses(msg.sender) returns (bool success) {
+    function approveAndCall(address _spender, uint256 _value, bytes _extraData) public fromUnlockedAddresses(msg.sender) returns (bool success) {
         if (locked) {
             return false;
         }
@@ -150,7 +150,7 @@ contract ERC20 is Ownable, AbstractLockedAddress {
         }
     }
 
-    function transferFrom(address _from, address _to, uint256 _value) fromUnlockedAddresses(_from) returns (bool success) {
+    function transferFrom(address _from, address _to, uint256 _value) public fromUnlockedAddresses(_from) returns (bool success) {
         if (locked) {
             return false;
         }

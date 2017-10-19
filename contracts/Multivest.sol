@@ -12,7 +12,14 @@ contract Multivest is Ownable {
     event MultivestSet(address multivest);
     event MultivestUnset(address multivest);
 
+event DebugB(string name, bytes32 v);
+
     AbstractLockedAddress public lockedAddress;
+
+    modifier onlyMultivests(address _addresss) {
+        require(allowedMultivests[_addresss] == true);
+        _;
+    }
 
     /* constructor */
     function Multivest(address multivest) {
@@ -34,19 +41,17 @@ contract Multivest is Ownable {
 
     function buy(address _address, uint256 value) internal returns (bool);
 
-    function acceptBuy(address _address, uint256 value) {
-        require(allowedMultivests[_address] == true);
+    function acceptMultivestBuy(address _address, uint256 value) public onlyMultivests(msg.sender) {
         allowedContributors[_address] = value;
     }
 
-    function burn(address _address) {
+    function burn(address _address) public onlyOwner {
         require(lockedAddress.isAddressLocked(_address));
         allowedContributors[_address] = 0;
     }
 
-    function multivestBuy(bytes32 hash, uint8 v, bytes32 r, bytes32 s, bool locked) payable {
+    function multivestBuy(bytes32 hash, uint8 v, bytes32 r, bytes32 s, bool locked) public payable onlyMultivests(verify(hash, v, r, s)) {
         require(hash == sha3(msg.sender, locked));
-        require(allowedMultivests[verify(hash, v, r, s)] == true);
         require(allowedContributors[msg.sender] >= msg.value);
 
         if (locked == true) {
