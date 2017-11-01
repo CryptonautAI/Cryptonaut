@@ -1,14 +1,16 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
 
 
 import './Uptick.sol';
-
 import './Multivest.sol';
+import "./SafeMath.sol";
 
 
 contract UptickICO is Uptick, Multivest {
 
-    address public etherHolderAddress;
+    using SafeMath for uint256;
+
+    uint256 public constant DAY = 86400;
 
     uint256 public softCap;
 
@@ -18,33 +20,35 @@ contract UptickICO is Uptick, Multivest {
 
     uint256 public icoTill;
 
+    address public etherHolderAddress;
+
     function UptickICO(
         address _etherHolderAddress,
-        address multivestAddress,
-        string tokenName,
-        string tokenSymbol,
-        uint256 totalSupply,
-        uint8 precision,
-        uint256 tokenPrice,
+        address _multivestAddress,
+        string _tokenName,
+        string _tokenSymbol,
+        uint256 _totalSupply,
+        uint8 _precision,
+        uint256 _tokenPrice,
         uint256 _softCap,
         uint256 _hardCap,
         uint256 _icoSince,
         bool _locked
-    ) Uptick(totalSupply, tokenName, tokenSymbol, precision, tokenPrice, _locked) Multivest(multivestAddress) {
+    ) Uptick(_totalSupply, _tokenName, _tokenSymbol, _precision, _tokenPrice, _locked) Multivest(_multivestAddress) {
         etherHolderAddress = _etherHolderAddress;
         softCap = _softCap;
         hardCap = _hardCap;
         icoSince = _icoSince;
-        icoTill = _icoSince + 2678400;// 31 days
+        icoTill = _icoSince + DAY.mul(31);// 31 days
     }
 
-    function buy(address _address, uint256 value) internal returns (bool) {
+    function buy(address _address, uint256 _value) internal returns (bool) {
         uint256 time = now;
 
         if (locked == true) {
             return false;
         }
-        if (totalSupply() == hardCap) {
+        if (totalSupply == hardCap) {
             return false;
         }
         if (icoSince > time) {
@@ -54,14 +58,14 @@ contract UptickICO is Uptick, Multivest {
             return false;
         }
 
-        uint256 amount = getTokensAmount(value);
+        uint256 amount = getTokensAmount(_value);
 
         if (amount == 0) {
             return false;
         }
 
-        if ((totalSupply() + amount >= softCap) && (icoTill - icoSince <= 2678400)) {
-            icoTill += 604800;// additional 7 days if the softCap is reached before the end of 31 days;
+        if ((totalSupply.add(amount) >= softCap) && (icoTill.sub(icoSince) <= DAY.mul(31))) {
+            icoTill = icoTill.add(DAY.mul(7));// additional 7 days if the softCap is reached before the end of 31 days;
         }
 
         if (amount != mint(_address, amount)) {
@@ -71,32 +75,32 @@ contract UptickICO is Uptick, Multivest {
         return true;
     }
 
-    function getTokensAmount(uint256 value) internal returns (uint256) {
-        if (value == 0) {
+    function getTokensAmount(uint256 _value) internal returns (uint256) {
+        if (_value == 0) {
             return 0;
         }
 
-        uint256 amount = value * (uint256(10) ** decimals) / tokenPrice;
+        uint256 amount = _value.mul(uint256(10) ** decimals).div(tokenPrice);
 
-        if (totalSupply() < softCap) {
+        if (totalSupply < softCap) {
             uint256 bonusAmount = amount;
-            if (totalSupply() + amount > softCap) {
-                bonusAmount = softCap - totalSupply();
+            if (totalSupply.add(amount) > softCap) {
+                bonusAmount = softCap.sub(totalSupply);
             }
-            amount += bonusAmount * 2 / 10;
+            amount = amount.add(bonusAmount.mul(2).div(10));
         }
 
-        if (totalSupply() + amount > hardCap) {
+        if (totalSupply.add(amount) > hardCap) {
             return 0;
         }
 
         return amount;
     }
 
-    function setICOPeriod(uint256 since, uint256 till) public onlyOwner {
-        require(since < till);
-        icoSince = since;
-        icoTill = till;
+    function setICOPeriod(uint256 _since, uint256 _till) public onlyOwner {
+        require(_since < _till);
+        icoSince = _since;
+        icoTill = _till;
     }
 
     function transferEthers() public onlyOwner {

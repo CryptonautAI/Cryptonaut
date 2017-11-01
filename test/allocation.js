@@ -72,7 +72,7 @@ contract('UptickTokenAllocation', function(accounts) {
             .then(() => Utils.balanceShouldEqualTo(UptickContract, accounts[22], new BigNumber('3250000').mul(precision).valueOf()))
 
             .then(() => Utils.balanceShouldEqualTo(UptickContract, accounts[31], new BigNumber('4550000').mul(precision).valueOf()))
-            .then(() => Utils.balanceShouldEqualTo(UptickContract, accounts[32], new BigNumber('4550000').mul(precision).valueOf()))
+           .then(() => Utils.balanceShouldEqualTo(UptickContract, accounts[32], new BigNumber('4550000').mul(precision).valueOf()))
             // 5% + 7% + 80% = 92
             // 6500000 + 9100000 + 104000000 = 119600000 | 130000000 - 119600000 = 10400000 | 10400000 * 100 / 130000000 = 8%
 

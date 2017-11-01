@@ -1,15 +1,21 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
+
+
 import "./ERC20.sol";
+import "./SafeMath.sol";
 
-    /*
-    This contract manages the minters and the modifier to allow mint to happen only if called by minters
-    This contract contains basic minting functionality though
-    */
 
+/*
+This contract manages the minters and the modifier to allow mint to happen only if called by minters
+This contract contains basic minting functionality though
+*/
 contract MintingERC20 is ERC20 {
 
-    mapping (address => bool) public minters;
+    using SafeMath for uint256;
+
     uint256 public maxSupply;
+
+    mapping (address => bool) public minters;
 
     modifier onlyMinters () {
         require(true == minters[msg.sender]);
@@ -40,21 +46,17 @@ contract MintingERC20 is ERC20 {
     }
 
     function mint(address _addr, uint256 _amount) public onlyMinters returns (uint256) {
-        if (locked == true) {
-            return uint256(0);
+        if (_amount == 0) {
+            return 0;
         }
-        if (_amount == uint256(0)) {
-            return uint256(0);
+
+        if (totalSupply.add(_amount) > maxSupply) {
+            return 0;
         }
-        if (initialSupply + _amount < initialSupply){
-            return uint256(0);
-        }
-        if (totalSupply() + _amount > maxSupply) {
-            return uint256(0);
-        }
-        initialSupply += _amount;
-        balances[_addr] += _amount;
-        Transfer(this, _addr, _amount);
+
+        totalSupply = totalSupply.add(_amount);
+        balanceOf[_addr] = balanceOf[_addr].add(_amount);
+        Transfer(0, _addr, _amount);
 
         return _amount;
     }

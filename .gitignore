@@ -1,6 +1,9 @@
 .idea
-*.iml
+build
+node_modules
 *.ipr
 *.iws
-libs
-build
+*.iml
+.node-xmlhttprequest-sync-*
+coverage.json
+coverage

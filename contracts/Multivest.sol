@@ -1,7 +1,8 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
 
-import './Ownable.sol';
-import './AbstractLockedAddress.sol';
+import "./Ownable.sol";
+import "./AbstractLockedAddress.sol";
+
 
 contract Multivest is Ownable {
     /* public variables */
@@ -12,9 +13,7 @@ contract Multivest is Ownable {
     event MultivestSet(address multivest);
     event MultivestUnset(address multivest);
 
-event DebugB(string name, bytes32 v);
-
-    AbstractLockedAddress public lockedAddress;
+//    AbstractLockedAddress public lockedAddress;
 
     modifier onlyMultivests(address _addresss) {
         require(allowedMultivests[_addresss] == true);
@@ -26,16 +25,16 @@ event DebugB(string name, bytes32 v);
         allowedMultivests[multivest] = true;
     }
 
-    function setLockedAddress(AbstractLockedAddress value) onlyOwner {
-        lockedAddress = value;
-    }
+//    function setLockedAddress(AbstractLockedAddress value) onlyOwner {
+//        lockedAddress = value;
+//    }
 
     /* public methods */
-    function setAllowedMultivest(address _address) onlyOwner {
+    function setAllowedMultivest(address _address) public onlyOwner {
         allowedMultivests[_address] = true;
     }
 
-    function unsetAllowedMultivest(address _address) onlyOwner {
+    function unsetAllowedMultivest(address _address) public onlyOwner {
         allowedMultivests[_address] = false;
     }
 
@@ -45,25 +44,25 @@ event DebugB(string name, bytes32 v);
         allowedContributors[_address] = value;
     }
 
-    function burn(address _address) public onlyOwner {
-        require(lockedAddress.isAddressLocked(_address));
-        allowedContributors[_address] = 0;
-    }
+//    function burn(address _address) public onlyOwner {
+//        require(lockedAddress.isAddressLocked(_address));
+//        allowedContributors[_address] = 0;
+//    }
 
     function multivestBuy(bytes32 hash, uint8 v, bytes32 r, bytes32 s, bool locked) public payable onlyMultivests(verify(hash, v, r, s)) {
         require(hash == sha3(msg.sender, locked));
         require(allowedContributors[msg.sender] >= msg.value);
 
-        if (locked == true) {
-            lockedAddress.setLockedAddress(msg.sender, true);
-        }
+//        if (locked == true) {
+//            lockedAddress.setLockedAddress(msg.sender, true);
+//        }
 
         bool status = buy(msg.sender, msg.value);
 
         require(status == true);
     }
 
-    function verify(bytes32 hash, uint8 v, bytes32 r, bytes32 s) constant returns(address) {
+    function verify(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal returns(address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
 
         return ecrecover(sha3(prefix, hash), v, r, s);

@@ -1,4 +1,5 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
+
 
 contract AbstractLockedAddress {
     function setLockedAddress(address _address, bool _lock);
