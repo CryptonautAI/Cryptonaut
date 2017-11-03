@@ -1,8 +1,8 @@
 pragma solidity 0.4.15;
 
 
-import './Uptick.sol';
-import './Multivest.sol';
+import "./Uptick.sol";
+import "./Multivest.sol";
 import "./SafeMath.sol";
 
 
@@ -34,7 +34,10 @@ contract UptickICO is Uptick, Multivest {
         uint256 _hardCap,
         uint256 _icoSince,
         bool _locked
-    ) Uptick(_totalSupply, _tokenName, _tokenSymbol, _precision, _tokenPrice, _locked) Multivest(_multivestAddress) {
+    )
+        Uptick(_totalSupply, _tokenName, _tokenSymbol, _precision, _tokenPrice, _locked)
+        Multivest(_multivestAddress)
+    {
         etherHolderAddress = _etherHolderAddress;
         softCap = _softCap;
         hardCap = _hardCap;
@@ -42,32 +45,41 @@ contract UptickICO is Uptick, Multivest {
         icoTill = _icoSince + DAY.mul(31);// 31 days
     }
 
-    function buy(address _address, uint256 _value) internal returns (bool) {
+    function setICOPeriod(uint256 _since, uint256 _till) public onlyOwner {
+        require(_since < _till);
+        icoSince = _since;
+        icoTill = _till;
+    }
+
+    function transferEthers() public onlyOwner {
+        require(address(etherHolderAddress) != 0x0);
+
+        etherHolderAddress.transfer(this.balance);
+    }
+
+    function setLockedAddress(address _address, bool _lock) public onlyMultivests(msg.sender) {
+        setLockedAddressInternal(_address, _lock);
+    }
+
+    function buy(address _address, uint256 _value, bool _lockedAddress) internal returns (bool) {
+        if (_lockedAddress == true) {
+            setLockedAddressInternal(msg.sender, true);
+        }
+
         uint256 time = now;
-
-        if (locked == true) {
+        if (locked == true || totalSupply == hardCap) {
             return false;
         }
-        if (totalSupply == hardCap) {
+        if (icoSince > time || icoTill < time) {
             return false;
         }
-        if (icoSince > time) {
-            return false;
-        }
-        if (icoTill < time) {
-            return false;
-        }
-
         uint256 amount = getTokensAmount(_value);
-
         if (amount == 0) {
             return false;
         }
-
         if ((totalSupply.add(amount) >= softCap) && (icoTill.sub(icoSince) <= DAY.mul(31))) {
             icoTill = icoTill.add(DAY.mul(7));// additional 7 days if the softCap is reached before the end of 31 days;
         }
-
         if (amount != mint(_address, amount)) {
             return false;
         }
@@ -95,18 +107,6 @@ contract UptickICO is Uptick, Multivest {
         }
 
         return amount;
-    }
-
-    function setICOPeriod(uint256 _since, uint256 _till) public onlyOwner {
-        require(_since < _till);
-        icoSince = _since;
-        icoTill = _till;
-    }
-
-    function transferEthers() public onlyOwner {
-        require(address(etherHolderAddress) != 0x0);
-
-        etherHolderAddress.transfer(this.balance);
     }
 
 }

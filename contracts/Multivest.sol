@@ -7,13 +7,15 @@ import "./AbstractLockedAddress.sol";
 contract Multivest is Ownable {
     /* public variables */
     mapping(address => bool) public allowedMultivests;
+
     mapping(address => uint256) public allowedContributors;
 
     /* events */
     event MultivestSet(address multivest);
+
     event MultivestUnset(address multivest);
 
-//    AbstractLockedAddress public lockedAddress;
+    AbstractLockedAddress public lockedAddress;
 
     modifier onlyMultivests(address _addresss) {
         require(allowedMultivests[_addresss] == true);
@@ -25,9 +27,9 @@ contract Multivest is Ownable {
         allowedMultivests[multivest] = true;
     }
 
-//    function setLockedAddress(AbstractLockedAddress value) onlyOwner {
-//        lockedAddress = value;
-//    }
+    function setAbstractLockedAddress(AbstractLockedAddress _value) public onlyOwner {
+        lockedAddress = _value;
+    }
 
     /* public methods */
     function setAllowedMultivest(address _address) public onlyOwner {
@@ -38,33 +40,35 @@ contract Multivest is Ownable {
         allowedMultivests[_address] = false;
     }
 
-    function buy(address _address, uint256 value) internal returns (bool);
-
-    function acceptMultivestBuy(address _address, uint256 value) public onlyMultivests(msg.sender) {
-        allowedContributors[_address] = value;
+    function acceptMultivestBuy(address _address, uint256 _value) public onlyMultivests(msg.sender) {
+        allowedContributors[_address] = _value;
     }
 
-//    function burn(address _address) public onlyOwner {
-//        require(lockedAddress.isAddressLocked(_address));
-//        allowedContributors[_address] = 0;
-//    }
+    function burn(address _address) public onlyOwner {
+        require(lockedAddress.isAddressLocked(_address));
+        allowedContributors[_address] = 0;
+    }
 
-    function multivestBuy(bytes32 hash, uint8 v, bytes32 r, bytes32 s, bool locked) public payable onlyMultivests(verify(hash, v, r, s)) {
-        require(hash == sha3(msg.sender, locked));
+    function multivestBuy(
+        bytes32 _hash,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s,
+        bool _locked
+    ) public payable onlyMultivests(verify(_hash, _v, _r, _s)) {
+        require(_hash == keccak256(msg.sender, _locked));
         require(allowedContributors[msg.sender] >= msg.value);
 
-//        if (locked == true) {
-//            lockedAddress.setLockedAddress(msg.sender, true);
-//        }
-
-        bool status = buy(msg.sender, msg.value);
+        bool status = buy(msg.sender, msg.value, _locked);
 
         require(status == true);
     }
 
-    function verify(bytes32 hash, uint8 v, bytes32 r, bytes32 s) internal returns(address) {
+    function verify(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal returns(address) {
         bytes memory prefix = "\x19Ethereum Signed Message:\n32";
 
-        return ecrecover(sha3(prefix, hash), v, r, s);
+        return ecrecover(keccak256(prefix, _hash), _v, _r, _s);
     }
+
+    function buy(address _address, uint256 _value, bool _locked) internal returns (bool);
 }
