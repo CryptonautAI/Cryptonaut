@@ -391,12 +391,18 @@ contract('UptickICO', function (accounts) {
             .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[0], 2400))
             .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[1], 0))
 
-        await icoContract.setLockedAddress(accounts[1], false)
+        await icoContract.setLockedAddress(accounts[0], false)
             .then(Utils.receiptShouldFailed)
             .catch(Utils.catchReceiptShouldFailed)
 
+        let checkLockedAddress = await icoContract.isAddressLocked.call(accounts[0])
+        assert.equal(checkLockedAddress.valueOf(), true, "isAddressLocked is not equal")
+
         await icoContract.setLockedAddress(accounts[0], false, {from: SigAddress})
             .then(() => Utils.receiptShouldSucceed)
+
+        checkLockedAddress = await icoContract.isAddressLocked.call(accounts[0])
+        assert.equal(checkLockedAddress.valueOf(), false, "isAddressLocked is not equal")
 
         await icoContract.transfer(accounts[1], 1000)
             .then(() => Utils.receiptShouldSucceed)
