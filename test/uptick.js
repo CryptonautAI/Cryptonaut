@@ -1,4 +1,5 @@
 var Uptick = artifacts.require('./UptickICO.sol'),
+    Token = artifacts.require('./Uptick.sol'),
     BigNumber = require('bignumber.js'),
     precision = new BigNumber(1000000000000000000),
     Utils = require('./utils');
@@ -10,23 +11,25 @@ var abi = require('ethereumjs-abi'),
 var SigAddress = web3.eth.accounts[1],
     WrongSigAddress = web3.eth.accounts[2],
     etherHolderAddress = web3.eth.accounts[3],
-    hashLock = false,
-    h = abi.soliditySHA3(['address', 'bool'], [new BN(web3.eth.accounts[0].substr(2), 16), hashLock]),
-    sig = web3.eth.sign(SigAddress, h.toString('hex')).slice(2),
-    r = `0x${sig.slice(0, 64)}`,
-    s = `0x${sig.slice(64, 128)}`,
-    v = web3.toDecimal(sig.slice(128, 130)) + 27;
+    hashLock = true;
 
 function makeTransaction(instance, value) {
     'use strict';
     // console.log(h.toString('hex'));
+    var h = abi.soliditySHA3(['address', 'bool'], [new BN(web3.eth.accounts[0].substr(2), 16), hashLock]),
+        sig = web3.eth.sign(SigAddress, h.toString('hex')).slice(2),
+        r = `0x${sig.slice(0, 64)}`,
+        s = `0x${sig.slice(64, 128)}`,
+        v = web3.toDecimal(sig.slice(128, 130)) + 27;
+
     var data = abi.simpleEncode('multivestBuy(bytes32,uint8,bytes32,bytes32,bool)', h, v, r, s, hashLock);
 
     return instance.sendTransaction({value: value, data: data.toString('hex')});
 }
 
-contract('UptickICO', function(accounts) {
-    it('deploy & check constructor data', function() {
+contract('UptickICO', function (accounts) {
+
+    it('deploy & check constructor data', function () {
         var instance, ICOSince = parseInt(new Date().getTime() / 1000);
 
         return Uptick.new(
@@ -328,24 +331,32 @@ contract('UptickICO', function(accounts) {
             .then((result) => assert.equal(result.valueOf(), '12000', 'collected amount is not equal'))
             .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], new BigNumber(12000).valueOf()))
 
-            .then(() => { contractEthBalance = Utils.getEtherBalance(instance.address); })
-            .then(() => { etherHolderBalance = Utils.getEtherBalance(etherHolderAddress); })
+            .then(() => {
+                contractEthBalance = Utils.getEtherBalance(instance.address);
+            })
+            .then(() => {
+                etherHolderBalance = Utils.getEtherBalance(etherHolderAddress);
+            })
 
             .then(() => instance.transferEthers())
 
-            .then((result)=> { Utils.receiptShouldSucceed(result); return Utils.getTxCost(result); })
+            .then((result) => {
+                Utils.receiptShouldSucceed(result);
+                return Utils.getTxCost(result);
+            })
 
             .then((result) => Utils.checkEtherBalance(etherHolderAddress, parseFloat(contractEthBalance) + parseFloat(etherHolderBalance)))
 
-            .then(() => { Utils.checkEtherBalance(instance.address, 0); })
+            .then(() => {
+                Utils.checkEtherBalance(instance.address, 0);
+            })
     });
 
-    it('create contract, buy tokens with correct sign address, check setLockedAddress', function () {
-        var instance, ICOSince = parseInt(new Date().getTime() / 1000);
 
-        hashLock = false;
+    it('create contract, check multivest buy process', async function () {
+        hashLock = true;
 
-        return Uptick.new(
+        let icoContract = await Uptick.new(
             etherHolderAddress,
             SigAddress,
             'TIC',
@@ -355,17 +366,49 @@ contract('UptickICO', function(accounts) {
             new BigNumber(500000000000000).mul(precision),//_tokenPrice
             new BigNumber(10000).mul(2400).mul(precision),//softCap
             new BigNumber(50000).mul(2000).mul(precision),//hardCap
-            ICOSince,//_icoSince
+            parseInt(new Date().getTime() / 1000),//_icoSince
             false
         )
-            .then((_instance) => instance = _instance)
 
-            .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], new BigNumber(0).valueOf()))
+        await makeTransaction(icoContract, '1000000000000000000')
+            .then(Utils.receiptShouldFailed)
+            .catch(Utils.catchReceiptShouldFailed)
 
-            .then(() => instance.acceptMultivestBuy(accounts[0], '2000000000000000000', {from: SigAddress}))
+        await icoContract.acceptMultivestBuy(accounts[0], '1000000000000000000', {from: SigAddress})
 
-            .then(() => makeTransaction(instance, '1000000000000000000'))
+        await makeTransaction(icoContract, '1000000000000000001')
+            .then(Utils.receiptShouldFailed)
+            .catch(Utils.catchReceiptShouldFailed)
+
+        await makeTransaction(icoContract, '1000000000000000000')
             .then(() => Utils.receiptShouldSucceed)
-    });
+            .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[0], new BigNumber(2400).valueOf()))
+            .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[1], new BigNumber(0).valueOf()))
+
+        await icoContract.transfer(accounts[1], 1000)
+            .then(Utils.receiptShouldFailed)
+            .catch(Utils.catchReceiptShouldFailed)
+            .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[0], 2400))
+            .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[1], 0))
+
+        await icoContract.setLockedAddress(accounts[0], false)
+            .then(Utils.receiptShouldFailed)
+            .catch(Utils.catchReceiptShouldFailed)
+
+        let checkLockedAddress = await icoContract.isAddressLocked.call(accounts[0])
+        assert.equal(checkLockedAddress.valueOf(), true, "isAddressLocked is not equal")
+
+        await icoContract.setLockedAddress(accounts[0], false, {from: SigAddress})
+            .then(() => Utils.receiptShouldSucceed)
+
+        checkLockedAddress = await icoContract.isAddressLocked.call(accounts[0])
+        assert.equal(checkLockedAddress.valueOf(), false, "isAddressLocked is not equal")
+
+        await icoContract.transfer(accounts[1], 1000)
+            .then(() => Utils.receiptShouldSucceed)
+            .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[0], 1400))
+            .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[1], 1000))
+
+    })
 
 });

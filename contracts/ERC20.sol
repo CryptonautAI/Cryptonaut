@@ -1,8 +1,9 @@
 pragma solidity 0.4.15;
 
+
 import "./Ownable.sol";
 import "./SafeMath.sol";
-//import "./AbstractLockedAddress.sol";
+import "./AbstractLockedAddress.sol";
 
 
 contract TokenRecipient {
@@ -13,8 +14,8 @@ contract TokenRecipient {
 /*
     ERC20 compatible smart contract
 */
-//contract ERC20 is Ownable, AbstractLockedAddress {
-contract ERC20 is Ownable {
+contract ERC20 is Ownable, AbstractLockedAddress {
+    //contract ERC20 is Ownable {
 
     using SafeMath for uint256;
 
@@ -38,22 +39,22 @@ contract ERC20 is Ownable {
 
     mapping (address => mapping (address => uint256)) public allowance;
 
-//    mapping (address => bool) public lockedAddresses;
+    mapping (address => bool) public lockedAddresses;
 
     /* This generates a public event on the blockchain that will notify clients */
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
 
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 
-    modifier onlyPayloadSize(uint numwords) {
-        assert(msg.data.length == numwords.mul(32).add(4));
+    modifier onlyPayloadSize(uint _numwords) {
+        assert(msg.data.length == _numwords.mul(32).add(4));
         _;
     }
 
-//    modifier fromUnlockedAddresses(address _address) {
-//        require(lockedAddresses[_address] != true);
-//        _;
-//    }
+    modifier fromUnlockedAddresses(address _address) {
+        require(lockedAddresses[_address] != true);
+        _;
+    }
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
     function ERC20(
@@ -83,8 +84,7 @@ contract ERC20 is Ownable {
     }
 
     /* Send coins */
-    function transfer(address _to, uint256 _value) public onlyPayloadSize(2) {
-//    function transfer(address _to, uint256 _value) public onlyPayloadSize(2) fromUnlockedAddresses(msg.sender) {
+    function transfer(address _to, uint256 _value) public onlyPayloadSize(2) fromUnlockedAddresses(msg.sender) {
         require(locked == false);
 
         bool status = transferInternal(msg.sender, _to, _value);
@@ -93,8 +93,10 @@ contract ERC20 is Ownable {
     }
 
     /* Approve */
-    function approve(address _spender, uint256 _value) public onlyPayloadSize(2) returns (bool success) {
-//    function approve(address _spender, uint256 _value) public onlyPayloadSize(2) fromUnlockedAddresses(msg.sender) returns (bool success) {
+    function approve(
+        address _spender,
+        uint256 _value
+    ) public onlyPayloadSize(2) fromUnlockedAddresses(msg.sender) returns (bool success) {
         if (locked) {
             return false;
         }
@@ -107,8 +109,11 @@ contract ERC20 is Ownable {
     }
 
     /* Approve and then communicate the approved contract in a single tx */
-    function approveAndCall(address _spender, uint256 _value, bytes _extraData) public returns (bool success) {
-//    function approveAndCall(address _spender, uint256 _value, bytes _extraData) public fromUnlockedAddresses(msg.sender) returns (bool success) {
+    function approveAndCall(
+        address _spender,
+        uint256 _value,
+        bytes _extraData
+    ) public fromUnlockedAddresses(msg.sender) returns (bool success) {
         if (locked) {
             return false;
         }
@@ -124,8 +129,11 @@ contract ERC20 is Ownable {
     }
 
     /* A contract attempts to get the coins */
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-//    function transferFrom(address _from, address _to, uint256 _value) public fromUnlockedAddresses(_from) returns (bool success) {
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _value
+    ) public fromUnlockedAddresses(_from) returns (bool success) {
         if (locked) {
             return false;
         }
@@ -141,6 +149,14 @@ contract ERC20 is Ownable {
         }
 
         return _success;
+    }
+
+    function isAddressLocked(address _address) public constant returns (bool) {
+        return lockedAddresses[_address] == true;
+    }
+
+    function setLockedAddressInternal(address _address, bool _lock) internal {
+        lockedAddresses[_address] = _lock;
     }
 
     function transferInternal(address _from, address _to, uint256 _value) internal returns (bool success) {

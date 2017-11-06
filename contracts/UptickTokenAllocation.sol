@@ -50,12 +50,48 @@ contract UptickTokenAllocation is Ownable {
         require(address(_uptickICO) != 0x0);
         uptickICO = UptickICO(address(_uptickICO));
 
-        require( (uptickICO.maxSupply().sub(uptickICO.hardCap()).mul(100).div(uptickICO.maxSupply())) == uint256(_rewardsPercentage).add(_teamsPercentage).add(_partnersPercentage) );
+        uint256 toAllocate = uptickICO.maxSupply().sub(uptickICO.hardCap()).mul(100).div(uptickICO.maxSupply());
+        require(toAllocate == uint256(_rewardsPercentage).add(_teamsPercentage).add(_partnersPercentage));
 
         require(setAllocation(_rewardsPercentage, _rewardsAddresses) == true);
         require(setAllocation(_partnersPercentage, _partnersAddresses) == true);
         require(setTeamAllocation(_teamsPercentage, _teamsPeriod, _teamCliff, _teamAddresses) == true);
 
+    }
+
+    function setUptickICO(address _uptickICO) public onlyOwner {
+        uptickICO = UptickICO(_uptickICO);
+    }
+
+    function allocateTokens() public {
+        require(address(uptickICO) != 0x0);
+
+        if (isTokensDistributed == false) {
+            require(uint8(partners.length) > 0);
+            for (uint8 i = 0; i < partners.length; i++) {
+                Allocation storage allocation = partners[i];
+                uint256 mintedAmount = uptickICO.mint(allocation.destAddress, allocation.amount);
+                require(mintedAmount == allocation.amount);
+            }
+            isTokensDistributed = true;
+        }
+
+        for (uint8 j = 0; j < teams.length; j++) {
+            TeamsAllocation storage team = teams[j];
+            if (uptickICO.icoSince().add(team.cliff).mul(MONTH_SECONDS) < team.distributionTime) {
+                continue;
+            }
+            uint256 mul = now.sub(team.distributionTime).div(team.cliff.mul(MONTH_SECONDS));
+            if (mul < 1) {
+                continue;
+            }
+            if (mul > team.period.div(team.cliff)) {
+                mul = team.period.div(team.cliff);
+            }
+            mintedAmount = uptickICO.mint(team.destAddress, team.cliffAmount.mul(mul));
+            require(mintedAmount == team.cliffAmount.mul(mul));
+            team.distributionTime = now;
+        }
     }
 
     function setTeamAllocation(
@@ -85,7 +121,13 @@ contract UptickTokenAllocation is Ownable {
         uint256 amount = uptickICO.maxSupply().mul(_teamsPercentage).div(100).div(_teamAddresses.length);
 
         for (uint8 i = 0; i < _teamAddresses.length; i++) {
-            teams.push(TeamsAllocation(_teamsPeriod, _teamCliff, amount.mul(_teamCliff).div(_teamsPeriod), uptickICO.icoSince(), _teamAddresses[i]));
+            teams.push(TeamsAllocation(
+                _teamsPeriod,
+                _teamCliff,
+                amount.mul(_teamCliff).div(_teamsPeriod),
+                uptickICO.icoSince(),
+                _teamAddresses[i]
+            ));
         }
 
         return true;
@@ -110,42 +152,5 @@ contract UptickTokenAllocation is Ownable {
 
         return true;
     }
-
-    function allocateTokens() public {
-        require(address(uptickICO) != 0x0);
-
-        if (isTokensDistributed == false) {
-            require(uint8(partners.length) > 0);
-            for (uint8 i = 0; i < partners.length; i++) {
-                Allocation storage allocation = partners[i];
-                uint256 mintedAmount = uptickICO.mint(allocation.destAddress, allocation.amount);
-                require(mintedAmount == allocation.amount);
-            }
-            isTokensDistributed = true;
-        }
-
-        for (uint8 j = 0; j < teams.length; j++) {
-            TeamsAllocation storage team = teams[j];
-            if (uptickICO.icoSince().add(team.cliff).mul(MONTH_SECONDS) < team.distributionTime) {
-                continue;
-            }
-            uint256 mul = now.sub(team.distributionTime).div(team.cliff.mul(MONTH_SECONDS));
-            if (mul < 1) {
-                continue;
-            }
-
-            if (mul > team.period.div(team.cliff)) {
-                mul = team.period.div(team.cliff);
-            }
-            mintedAmount = uptickICO.mint(team.destAddress, team.cliffAmount.mul(mul));
-            require(mintedAmount == team.cliffAmount.mul(mul));
-            team.distributionTime = now;
-        }
-    }
-
-    function setUptickICO(address _uptickICO) public onlyOwner {
-        uptickICO = UptickICO(_uptickICO);
-    }
-
 
 }
