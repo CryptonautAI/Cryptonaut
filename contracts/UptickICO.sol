@@ -80,9 +80,8 @@ contract UptickICO is Uptick, Multivest {
         if ((totalSupply.add(amount) >= softCap) && (icoTill.sub(icoSince) <= DAY.mul(31))) {
             icoTill = icoTill.add(DAY.mul(7));// additional 7 days if the softCap is reached before the end of 31 days;
         }
-        if (amount != mint(_address, amount)) {
-            return false;
-        }
+
+        require(amount == mint(_address, amount));
 
         return true;
     }
