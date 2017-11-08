@@ -170,10 +170,6 @@ contract ERC20 is Ownable, AbstractLockedAddress {
             return false;
         }
 
-        if (balanceOf[_to].add(_value) <= balanceOf[_to]) {
-            return false;
-        }
-
         balanceOf[_from] = balanceOf[_from].sub(_value);
         balanceOf[_to] = balanceOf[_to].add(_value);
 

@@ -227,4 +227,32 @@ contract('ERC20', function(accounts) {
         .then(() => Utils.balanceShouldEqualTo(instance, accounts[1], 0))
         .then(() => Utils.balanceShouldEqualTo(instance, instance.address, 0))
     });
+
+    it("try to transfer 0 tokens", function() {
+        "use strict";
+
+        var instance;
+
+        return ERC20.new(
+            1000000,
+            "TEST",
+            18,
+            "TEST",
+            true,
+            false
+        ).then(function(_instance) {
+            instance = _instance;
+        })
+            .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], 1000000))
+            .then(() => Utils.balanceShouldEqualTo(instance, accounts[1], 0))
+            .then(() => Utils.balanceShouldEqualTo(instance, instance.address, 0))
+            .then(function() {
+                return instance.transfer(accounts[1], 0);
+            })
+            .then(Utils.receiptShouldSucceed)
+            .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], 1000000))
+            .then(() => Utils.balanceShouldEqualTo(instance, accounts[1], 0))
+            .then(() => Utils.balanceShouldEqualTo(instance, instance.address, 0))
+    });
+
 });

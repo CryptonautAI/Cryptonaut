@@ -352,7 +352,6 @@ contract('UptickICO', function (accounts) {
             })
     });
 
-
     it('create contract, check multivest buy process', async function () {
         hashLock = true;
 
@@ -374,7 +373,13 @@ contract('UptickICO', function (accounts) {
             .then(Utils.receiptShouldFailed)
             .catch(Utils.catchReceiptShouldFailed)
 
+        let checkAllowedContributors = await icoContract.allowedContributors.call(accounts[0])
+        assert.equal(checkAllowedContributors.valueOf(), 0, "checkAllowedContributors is not equal")
+
         await icoContract.acceptMultivestBuy(accounts[0], '1000000000000000000', {from: SigAddress})
+
+        checkAllowedContributors = await icoContract.allowedContributors.call(accounts[0])
+        assert.equal(checkAllowedContributors.valueOf(), '1000000000000000000', "checkAllowedContributors is not equal")
 
         await makeTransaction(icoContract, '1000000000000000001')
             .then(Utils.receiptShouldFailed)
@@ -384,6 +389,15 @@ contract('UptickICO', function (accounts) {
             .then(() => Utils.receiptShouldSucceed)
             .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[0], new BigNumber(2400).valueOf()))
             .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[1], new BigNumber(0).valueOf()))
+
+        await icoContract.setAbstractLockedAddress(icoContract.address)
+
+        await icoContract.burn(accounts[0])
+            .then(() => Utils.receiptShouldSucceed)
+
+        checkAllowedContributors = await icoContract.allowedContributors.call(accounts[0])
+        assert.equal(checkAllowedContributors.valueOf(), '0', "checkAllowedContributors is not equal")
+
 
         await icoContract.transfer(accounts[1], 1000)
             .then(Utils.receiptShouldFailed)
@@ -410,5 +424,63 @@ contract('UptickICO', function (accounts) {
             .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[1], 1000))
 
     })
+
+    it('check setLocked', async function () {
+        let icoContract = await Uptick.new(
+            etherHolderAddress,
+            SigAddress,
+            'TIC',
+            'TIC',
+            new BigNumber(130000000).mul(precision),//totalSupply
+            18,
+            new BigNumber(500000000000000).mul(precision),//_tokenPrice
+            new BigNumber(10000).mul(2400).mul(precision),//softCap
+            new BigNumber(50000).mul(2000).mul(precision),//hardCap
+            parseInt(new Date().getTime() / 1000),//_icoSince
+            false
+        )
+
+        let locked = await icoContract.locked.call()
+        assert.equal(locked.valueOf(), false, 'locked is not equal')
+
+        await icoContract.setLocked(true, {from: accounts[1]})
+            .then(Utils.receiptShouldFailed)
+            .catch(Utils.catchReceiptShouldFailed)
+
+        locked = await icoContract.locked.call()
+        assert.equal(locked.valueOf(), false, 'locked is not equal')
+
+        await icoContract.setLocked(true)
+
+        locked = await icoContract.locked.call()
+        assert.equal(locked.valueOf(), true, 'locked is not equal')
+
+    })
+
+    it('create contract, check buy 0 tokens', async function () {
+        hashLock = true;
+
+        let icoContract = await Uptick.new(
+            etherHolderAddress,
+            SigAddress,
+            'TIC',
+            'TIC',
+            new BigNumber(130000000).mul(precision),//totalSupply
+            18,
+            new BigNumber(500000000000000).mul(precision),//_tokenPrice
+            new BigNumber(10000).mul(2400).mul(precision),//softCap
+            new BigNumber(50000).mul(2000).mul(precision),//hardCap
+            parseInt(new Date().getTime() / 1000),//_icoSince
+            false
+        )
+
+        await icoContract.acceptMultivestBuy(accounts[0], '1000000000000000000', {from: SigAddress})
+
+        await makeTransaction(icoContract, '0')
+            .then(Utils.receiptShouldFailed)
+            .catch(Utils.catchReceiptShouldFailed)
+
+    })
+
 
 });
