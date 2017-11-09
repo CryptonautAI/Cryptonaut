@@ -1,9 +1,7 @@
 pragma solidity 0.4.15;
 
-
 import "./Ownable.sol";
 import "./SafeMath.sol";
-import "./AbstractLockedAddress.sol";
 
 
 contract TokenRecipient {
@@ -14,7 +12,7 @@ contract TokenRecipient {
 /*
     ERC20 compatible smart contract
 */
-contract ERC20 is Ownable, AbstractLockedAddress {
+contract ERC20 is Ownable {
     //contract ERC20 is Ownable {
 
     using SafeMath for uint256;

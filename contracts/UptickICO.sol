@@ -61,11 +61,13 @@ contract UptickICO is Uptick, Multivest {
         setLockedAddressInternal(_address, _lock);
     }
 
-    function buy(address _address, uint256 _value, bool _lockedAddress) internal returns (bool) {
-        if (_lockedAddress == true) {
-            setLockedAddressInternal(msg.sender, true);
-        }
+    function burn(address _address) public onlyOwner {
+        require(isAddressLocked(_address) == true);
+        balanceOf[_address] = 0;
+        setLockedAddressInternal(_address, false);
+    }
 
+    function buy(address _address, uint256 _value, bool _lockedAddress) internal returns (bool) {
         uint256 time = now;
         if (locked == true || totalSupply == hardCap) {
             return false;
@@ -73,12 +75,16 @@ contract UptickICO is Uptick, Multivest {
         if (icoSince > time || icoTill < time) {
             return false;
         }
+        if (_lockedAddress == true) {
+            setLockedAddressInternal(msg.sender, true);
+        }
         uint256 amount = getTokensAmount(_value);
         if (amount == 0) {
             return false;
         }
         if ((totalSupply.add(amount) >= softCap) && (icoTill.sub(icoSince) <= DAY.mul(31))) {
-            icoTill = icoTill.add(DAY.mul(7));// additional 7 days if the softCap is reached before the end of 31 days;
+            icoTill = icoTill.add(DAY.mul(7));
+            // additional 7 days if the softCap is reached before the end of 31 days;
         }
 
         require(amount == mint(_address, amount));

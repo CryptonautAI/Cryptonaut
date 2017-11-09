@@ -1,5 +1,6 @@
 var Uptick = artifacts.require('./UptickICO.sol'),
     UptickAllocation = artifacts.require('./UptickTokenAllocation.sol'),
+    TestUptickAllocation = artifacts.require('./test/TestUptickTokenAllocation.sol'),
     BigNumber = require('bignumber.js'),
     precision = new BigNumber(1000000000000000000),
     Utils = require('./utils');
@@ -269,6 +270,82 @@ contract('UptickTokenAllocation', function(accounts) {
 
             .then(() => Utils.balanceShouldEqualTo(UptickContract, accounts[10], new BigNumber('5200000').mul(precision).valueOf()))
             .then(() => Utils.balanceShouldEqualTo(UptickContract, accounts[11], new BigNumber('5200000').mul(precision).valueOf()))
+    });
+
+    it("test setTeamAllocation && setAllocation functions", async function () {
+        let ICOSince = parseInt(new Date().getTime() / 1000) - monthSeconds * 15,
+            softCap = new BigNumber(10000).mul(2400).mul(precision),
+            hardCap = new BigNumber((40000 * 2000) + (10000 * 2400)).mul(precision);
+
+        let UptickContract = await Uptick.new(
+            etherHolderAddress,
+            SigAddress,
+            'TIC',
+            'TIC',
+            new BigNumber(130000000).mul(precision),//totalSupply
+            18,
+            new BigNumber(500000000000000),//_tokenPrice
+            softCap,//softCap
+            hardCap,//hardCap
+            ICOSince,//_icoSince
+            false
+        )
+
+        let allocation = await TestUptickAllocation.new(
+            UptickContract.address,
+            8,//teamsPercentage
+            12,//teamsPeriod
+            3,//teamCliff
+            [
+                accounts[10],
+                accounts[11],
+            ],//teamAddresses
+            5,//rewardsPercentage
+            [
+                accounts[21],
+                accounts[22],
+            ],//rewardsAddresses
+            7,//partnersPercentage
+            [
+                accounts[31],
+                accounts[32],
+            ],//partnersAddresses
+        )
+
+        let check = await allocation.checkSetTeamAllocation.call(8, 12, 3, [accounts[10], accounts[11]])
+        assert.equal(check.valueOf(), true, 'check value is not equal')
+
+        check = await allocation.checkSetTeamAllocation.call(0, 12, 3, [accounts[10], accounts[11]])
+        assert.equal(check.valueOf(), false, 'check value is not equal')
+
+        check = await allocation.checkSetTeamAllocation.call(101, 12, 3, [accounts[10], accounts[11]])
+        assert.equal(check.valueOf(), false, 'check value is not equal')
+
+        check = await allocation.checkSetTeamAllocation.call(8, 0, 3, [accounts[10], accounts[11]])
+        assert.equal(check.valueOf(), false, 'check value is not equal')
+
+        check = await allocation.checkSetTeamAllocation.call(8, 12, 0, [accounts[10], accounts[11]])
+        assert.equal(check.valueOf(), false, 'check value is not equal')
+
+        check = await allocation.checkSetTeamAllocation.call(8, 12, 15, [accounts[10], accounts[11]])
+        assert.equal(check.valueOf(), false, 'check value is not equal')
+
+        check = await allocation.checkSetTeamAllocation.call(8, 12, 3, [])
+        assert.equal(check.valueOf(), false, 'check value is not equal')
+
+
+        check = await allocation.checkSetAllocation.call(5, [accounts[21], accounts[22]])
+        assert.equal(check.valueOf(), true, 'check value is not equal')
+
+        check = await allocation.checkSetAllocation.call(0, [accounts[21], accounts[22]])
+        assert.equal(check.valueOf(), false, 'check value is not equal')
+
+        check = await allocation.checkSetAllocation.call(101, [accounts[21], accounts[22]])
+        assert.equal(check.valueOf(), false, 'check value is not equal')
+
+        check = await allocation.checkSetAllocation.call(5, [])
+        assert.equal(check.valueOf(), false, 'check value is not equal')
+
     });
 
 });

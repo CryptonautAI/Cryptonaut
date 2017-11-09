@@ -104,8 +104,6 @@ contract('UptickICO', function (accounts) {
 
             .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], new BigNumber(0).valueOf()))
 
-            .then(() => instance.acceptMultivestBuy(accounts[0], '2000000000000000000', {from: SigAddress}))
-
             .then(() => makeTransaction(instance, '1000000000000000000'))
             .then(() => Utils.receiptShouldSucceed)
 
@@ -134,7 +132,6 @@ contract('UptickICO', function (accounts) {
 
             .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], new BigNumber(0).valueOf()))
 
-            .then(() => instance.acceptMultivestBuy(accounts[0], '2000000000000000000', {from: SigAddress}))
             .then(() => makeTransaction(instance, '1000000000000000000'))
             .then(Utils.receiptShouldFailed)
             .catch(Utils.catchReceiptShouldFailed)
@@ -167,7 +164,6 @@ contract('UptickICO', function (accounts) {
             .then(() => instance.softCap.call())
             .then((result) => assert.equal(result.valueOf(), new BigNumber(3000), 'softCap is not equal'))
 
-            .then(() => instance.acceptMultivestBuy(accounts[0], '5000000000000000000', {from: SigAddress}))
             .then(() => makeTransaction(instance, '1000000000000000000'))
             .then(() => Utils.receiptShouldSucceed)
             .then(() => instance.totalSupply.call())
@@ -208,7 +204,6 @@ contract('UptickICO', function (accounts) {
 
             .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], new BigNumber(0).valueOf()))
 
-            .then(() => instance.acceptMultivestBuy(accounts[0], '2000000000000000000', {from: SigAddress}))
             .then(() => makeTransaction(instance, '1000000000000000000'))
             .then(Utils.receiptShouldFailed)
             .catch(Utils.catchReceiptShouldFailed)
@@ -238,7 +233,6 @@ contract('UptickICO', function (accounts) {
 
             .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], new BigNumber(0).valueOf()))
 
-            .then(() => instance.acceptMultivestBuy(accounts[0], '2000000000000000000', {from: SigAddress}))
             .then(() => makeTransaction(instance, '1000000000000000000'))
             .then(Utils.receiptShouldFailed)
             .catch(Utils.catchReceiptShouldFailed)
@@ -273,8 +267,6 @@ contract('UptickICO', function (accounts) {
 
             .then(() => instance.hardCap.call())
             .then((result) => assert.equal(result.valueOf(), new BigNumber(4520), 'hardCap is not equal'))
-
-            .then(() => instance.acceptMultivestBuy(accounts[0], '5000000000000000000', {from: SigAddress}))
 
             .then(() => makeTransaction(instance, '1000000000000000000'))
             .then(() => Utils.receiptShouldSucceed)
@@ -323,7 +315,6 @@ contract('UptickICO', function (accounts) {
 
             .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], new BigNumber(0).valueOf()))
 
-            .then(() => instance.acceptMultivestBuy(accounts[0], '7000000000000000000', {from: SigAddress}))
             .then(() => makeTransaction(instance, '5000000000000000000'))
             .then(() => Utils.receiptShouldSucceed)
 
@@ -370,34 +361,9 @@ contract('UptickICO', function (accounts) {
         )
 
         await makeTransaction(icoContract, '1000000000000000000')
-            .then(Utils.receiptShouldFailed)
-            .catch(Utils.catchReceiptShouldFailed)
-
-        let checkAllowedContributors = await icoContract.allowedContributors.call(accounts[0])
-        assert.equal(checkAllowedContributors.valueOf(), 0, "checkAllowedContributors is not equal")
-
-        await icoContract.acceptMultivestBuy(accounts[0], '1000000000000000000', {from: SigAddress})
-
-        checkAllowedContributors = await icoContract.allowedContributors.call(accounts[0])
-        assert.equal(checkAllowedContributors.valueOf(), '1000000000000000000', "checkAllowedContributors is not equal")
-
-        await makeTransaction(icoContract, '1000000000000000001')
-            .then(Utils.receiptShouldFailed)
-            .catch(Utils.catchReceiptShouldFailed)
-
-        await makeTransaction(icoContract, '1000000000000000000')
             .then(() => Utils.receiptShouldSucceed)
             .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[0], new BigNumber(2400).valueOf()))
             .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[1], new BigNumber(0).valueOf()))
-
-        await icoContract.setAbstractLockedAddress(icoContract.address)
-
-        await icoContract.burn(accounts[0])
-            .then(() => Utils.receiptShouldSucceed)
-
-        checkAllowedContributors = await icoContract.allowedContributors.call(accounts[0])
-        assert.equal(checkAllowedContributors.valueOf(), '0', "checkAllowedContributors is not equal")
-
 
         await icoContract.transfer(accounts[1], 1000)
             .then(Utils.receiptShouldFailed)
@@ -474,13 +440,41 @@ contract('UptickICO', function (accounts) {
             false
         )
 
-        await icoContract.acceptMultivestBuy(accounts[0], '1000000000000000000', {from: SigAddress})
-
         await makeTransaction(icoContract, '0')
             .then(Utils.receiptShouldFailed)
             .catch(Utils.catchReceiptShouldFailed)
 
     })
 
+    it("create contract & check buy after hardCap", async function () {
+        hashLock = true;
+
+        let icoContract = await Uptick.new(
+            etherHolderAddress,
+            SigAddress,
+            'TIC',
+            'TIC',
+            new BigNumber(130000000).mul(precision),//totalSupply
+            18,
+            new BigNumber(500000000000000).mul(precision),//_tokenPrice
+            new BigNumber(10000).mul(2400).mul(precision),//softCap
+            new BigNumber(3000),//hardCap
+            parseInt(new Date().getTime() / 1000),//_icoSince
+            false
+        )
+
+        await makeTransaction(icoContract, '1000000000000000000')
+            .then(() => Utils.receiptShouldSucceed)
+            .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[0], new BigNumber("2400").valueOf()))
+
+        let totalSupply = await icoContract.totalSupply()
+        assert.equal(totalSupply.valueOf(), "2400", 'totalSupply is not equal')
+
+        await makeTransaction(icoContract, '1000000000000000000')
+            .then(Utils.receiptShouldFailed)
+            .catch(Utils.catchReceiptShouldFailed)
+            .then(() => Utils.balanceShouldEqualTo(icoContract, accounts[0], new BigNumber("2400").valueOf()))
+
+    });
 
 });
