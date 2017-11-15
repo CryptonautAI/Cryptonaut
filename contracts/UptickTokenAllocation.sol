@@ -47,7 +47,7 @@ contract UptickTokenAllocation is Ownable {
         uint8 _partnersPercentage,
         address[] _partnersAddresses
     ) {
-        require(address(_uptickICO) != 0x0);
+        require(_uptickICO != address(0));
         uptickICO = UptickICO(address(_uptickICO));
 
         uint256 toAllocate = uptickICO.maxSupply().sub(uptickICO.hardCap()).mul(100).div(uptickICO.maxSupply());
@@ -60,6 +60,7 @@ contract UptickTokenAllocation is Ownable {
     }
 
     function setUptickICO(address _uptickICO) public onlyOwner {
+        require(_uptickICO != address(0));
         uptickICO = UptickICO(_uptickICO);
     }
 

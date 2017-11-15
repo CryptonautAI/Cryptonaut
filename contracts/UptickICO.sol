@@ -38,6 +38,7 @@ contract UptickICO is Uptick, Multivest {
         Uptick(_totalSupply, _tokenName, _tokenSymbol, _precision, _tokenPrice, _locked)
         Multivest(_multivestAddress)
     {
+        require(_etherHolderAddress != address(0));
         etherHolderAddress = _etherHolderAddress;
         softCap = _softCap;
         hardCap = _hardCap;
@@ -52,12 +53,11 @@ contract UptickICO is Uptick, Multivest {
     }
 
     function transferEthers() public onlyOwner {
-        require(address(etherHolderAddress) != 0x0);
-
         etherHolderAddress.transfer(this.balance);
     }
 
     function setLockedAddress(address _address, bool _lock) public onlyMultivests(msg.sender) {
+        require(_address != address(0));
         setLockedAddressInternal(_address, _lock);
     }
 
