@@ -22,6 +22,8 @@ contract UptickICO is Uptick, Multivest {
 
     uint256 public soldTokens;
 
+    uint256 public collectedEthers;
+
     address public etherHolderAddress;
 
     function UptickICO(
@@ -68,6 +70,11 @@ contract UptickICO is Uptick, Multivest {
         totalSupply = totalSupply.sub(balanceOf[_address]);
         balanceOf[_address] = 0;
         setLockedAddressInternal(_address, false);
+    }
+
+    function increaseCollectedEthers(uint256 _value) internal returns (bool) {
+        require(_value > 0);
+        collectedEthers = collectedEthers.add(_value);
     }
 
     function buy(address _address, uint256 _value, bool _lockedAddress) internal returns (bool) {

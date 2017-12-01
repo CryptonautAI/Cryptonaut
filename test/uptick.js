@@ -139,6 +139,8 @@ contract('UptickICO', function (accounts) {
             .then(() => instance.totalSupply.call())
             .then((result) => assert.equal(result.valueOf(), new BigNumber(0).valueOf(), 'collected amount is not equal'))
             .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], new BigNumber(0).valueOf()))
+            .then(() => instance.collectedEthers.call())
+            .then((result) => assert.equal(result.valueOf(), new BigNumber(0).valueOf(), 'collectedEthers amount is not equal'))
     });
 
     it('create contract, buy tokens with correct sign address, check price after SoftCap, check sale period', function () {
@@ -169,6 +171,8 @@ contract('UptickICO', function (accounts) {
             .then(() => instance.totalSupply.call())
             .then((result) => assert.equal(result.valueOf(), '2400', 'collected amount is not equal'))
             .then(() => Utils.balanceShouldEqualTo(instance, accounts[0], new BigNumber(2400).valueOf()))
+            .then(() => instance.collectedEthers.call())
+            .then((result) => assert.equal(result.valueOf(), new BigNumber(1000000000000000000).valueOf(), 'collectedEthers amount is not equal'))
 
             .then(() => instance.icoTill.call())
             .then((result) => assert.equal(result.valueOf(), ICOSince + 2678400, 'ICOTill is not equal'))

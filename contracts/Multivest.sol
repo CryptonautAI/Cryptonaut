@@ -2,8 +2,8 @@ pragma solidity 0.4.15;
 
 import "./Ownable.sol";
 
-
 contract Multivest is Ownable {
+
     /* public variables */
     mapping(address => bool) public allowedMultivests;
 
@@ -46,8 +46,8 @@ contract Multivest is Ownable {
         require(_hash == keccak256(msg.sender, _locked));
 
         bool status = buy(msg.sender, msg.value, _locked);
-
         require(status == true);
+        increaseCollectedEthers(msg.value);
     }
 
     function verify(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal returns(address) {
@@ -57,4 +57,6 @@ contract Multivest is Ownable {
     }
 
     function buy(address _address, uint256 _value, bool _locked) internal returns (bool);
+
+    function increaseCollectedEthers(uint256 _value) internal returns (bool);
 }
