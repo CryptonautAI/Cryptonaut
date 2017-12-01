@@ -91,7 +91,7 @@ contract UptickICO is Uptick, Multivest {
         }
 
         require(amount == mint(_address, amount));
-        soldTokens = soldTokens.add(soldTokens);
+        soldTokens = soldTokens.add(amount);
 
         return true;
     }
