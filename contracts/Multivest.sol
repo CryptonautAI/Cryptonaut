@@ -31,6 +31,11 @@ contract Multivest is Ownable {
         allowedMultivests[_address] = false;
     }
 
+    function multivestBuy(address _holder, uint256 _value, bool _locked) public onlyMultivests(msg.sender) {
+        bool status = buy(_holder, _value, _locked);
+        require(status == true);
+    }
+
     function multivestBuy(
         bytes32 _hash,
         uint8 _v,

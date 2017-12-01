@@ -20,6 +20,8 @@ contract UptickICO is Uptick, Multivest {
 
     uint256 public icoTill;
 
+    uint256 public soldTokens;
+
     address public etherHolderAddress;
 
     function UptickICO(
@@ -63,6 +65,7 @@ contract UptickICO is Uptick, Multivest {
 
     function burn(address _address) public onlyOwner {
         require(isAddressLocked(_address) == true);
+        totalSupply = totalSupply.sub(balanceOf[_address]);
         balanceOf[_address] = 0;
         setLockedAddressInternal(_address, false);
     }
@@ -88,11 +91,12 @@ contract UptickICO is Uptick, Multivest {
         }
 
         require(amount == mint(_address, amount));
+        soldTokens = soldTokens.add(soldTokens);
 
         return true;
     }
 
-    function getTokensAmount(uint256 _value) internal returns (uint256) {
+    function getTokensAmount(uint256 _value) public constant returns (uint256) {
         if (_value == 0) {
             return 0;
         }
