@@ -22,4 +22,8 @@ contract TestMultivest is Multivest, ERC20 {
         _locked = _locked;
         return transferInternal(this, _address, value);
     }
+    function increaseCollectedEthers(uint256 _value) internal returns (bool) {
+        _value = _value;
+        return true;
+    }
 }

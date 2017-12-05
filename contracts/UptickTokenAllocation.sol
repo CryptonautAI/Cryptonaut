@@ -3,6 +3,7 @@ pragma solidity 0.4.15;
 
 import "./Ownable.sol";
 import "./UptickICO.sol";
+import "./Uptick.sol";
 import "./SafeMath.sol";
 
 
@@ -15,6 +16,8 @@ contract UptickTokenAllocation is Ownable {
     bool public isTokensDistributed = false;
 
     UptickICO public uptickICO;
+
+    Uptick public uptickToken;
 
     Allocation[] public partners;
 
@@ -35,6 +38,7 @@ contract UptickTokenAllocation is Ownable {
 
     function UptickTokenAllocation(
         address _uptickICO,
+        address _uptickToken,
 
         uint8 _teamsPercentage,
         uint256 _teamsPeriod, //months
@@ -47,16 +51,22 @@ contract UptickTokenAllocation is Ownable {
         uint8 _partnersPercentage,
         address[] _partnersAddresses
     ) {
-        require(_uptickICO != address(0));
+        require(_uptickICO != address(0) && _uptickToken != address(0));
         uptickICO = UptickICO(address(_uptickICO));
+        uptickToken = uptickToken = Uptick(_uptickToken);
 
-        uint256 toAllocate = uptickICO.maxSupply().sub(uptickICO.hardCap()).mul(100).div(uptickICO.maxSupply());
+        uint256 toAllocate = uptickToken.maxSupply().sub(uptickICO.hardCap()).mul(100).div(uptickToken.maxSupply());
         require(toAllocate == uint256(_rewardsPercentage).add(_teamsPercentage).add(_partnersPercentage));
+
 
         require(setAllocation(_rewardsPercentage, _rewardsAddresses) == true);
         require(setAllocation(_partnersPercentage, _partnersAddresses) == true);
         require(setTeamAllocation(_teamsPercentage, _teamsPeriod, _teamCliff, _teamAddresses) == true);
+    }
 
+    function setUptick(address _uptick) public onlyOwner {
+        require(_uptick != address(0));
+        uptickToken = Uptick(_uptick);
     }
 
     function setUptickICO(address _uptickICO) public onlyOwner {
@@ -65,13 +75,13 @@ contract UptickTokenAllocation is Ownable {
     }
 
     function allocateTokens() public {
-        require(address(uptickICO) != 0x0);
+        require(address(uptickICO) != address(0) && address(uptickToken) != address(0));
 
         if (isTokensDistributed == false) {
             require(uint8(partners.length) > 0);
             for (uint8 i = 0; i < partners.length; i++) {
                 Allocation storage allocation = partners[i];
-                uint256 mintedAmount = uptickICO.mint(allocation.destAddress, allocation.amount);
+                uint256 mintedAmount = uptickToken.mint(allocation.destAddress, allocation.amount);
                 require(mintedAmount == allocation.amount);
             }
             isTokensDistributed = true;
@@ -89,7 +99,7 @@ contract UptickTokenAllocation is Ownable {
             if (mul > team.period.div(team.cliff)) {
                 mul = team.period.div(team.cliff);
             }
-            mintedAmount = uptickICO.mint(team.destAddress, team.cliffAmount.mul(mul));
+            mintedAmount = uptickToken.mint(team.destAddress, team.cliffAmount.mul(mul));
             require(mintedAmount == team.cliffAmount.mul(mul));
             team.distributionTime = now;
         }
@@ -119,7 +129,7 @@ contract UptickTokenAllocation is Ownable {
             return false;
         }
 
-        uint256 amount = uptickICO.maxSupply().mul(_teamsPercentage).div(100).div(_teamAddresses.length);
+        uint256 amount = uptickToken.maxSupply().mul(_teamsPercentage).div(100).div(_teamAddresses.length);
 
         for (uint8 i = 0; i < _teamAddresses.length; i++) {
             teams.push(TeamsAllocation(
@@ -145,7 +155,7 @@ contract UptickTokenAllocation is Ownable {
             return false;
         }
 
-        uint256 amount = uptickICO.maxSupply().mul(_percentage).div(100).div(_addresses.length);
+        uint256 amount = uptickToken.maxSupply().mul(_percentage).div(100).div(_addresses.length);
 
         for (uint8 i = 0; i < _addresses.length; i++) {
             partners.push(Allocation(amount, _addresses[i]));

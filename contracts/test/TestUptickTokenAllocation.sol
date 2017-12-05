@@ -7,6 +7,7 @@ contract TestUptickTokenAllocation is UptickTokenAllocation {
 
     function TestUptickTokenAllocation(
         address _uptickICO,
+        address _uptickToken,
         uint8 _teamsPercentage,
         uint256 _teamsPeriod, //months
         uint256 _teamCliff, //months
@@ -17,6 +18,7 @@ contract TestUptickTokenAllocation is UptickTokenAllocation {
         address[] _partnersAddresses
     ) UptickTokenAllocation(
         _uptickICO,
+        _uptickToken,
         _teamsPercentage,
         _teamsPeriod, //months
         _teamCliff, //months
