@@ -13,23 +13,22 @@ var SigAddress = web3.eth.accounts[1],
     etherHolderAddress = web3.eth.accounts[3],
     hashLock = true;
 
-function generateData(signAddress, buyerAddress) {
-    var h = abi.soliditySHA3(['address', 'bool'], [new BN(buyerAddress.substr(2), 16), hashLock]),
-        sig = web3.eth.sign(signAddress, h.toString('hex')).slice(2),
-        r = `0x${sig.slice(0, 64)}`,
-        s = `0x${sig.slice(64, 128)}`,
-        v = web3.toDecimal(sig.slice(128, 130)) + 27;
+// function generateData(signAddress, buyerAddress) {
+//     var h = abi.soliditySHA3(['address', 'bool'], [new BN(buyerAddress.substr(2), 16), hashLock]),
+//         sig = web3.eth.sign(signAddress, h.toString('hex')).slice(2),
+//         r = `0x${sig.slice(0, 64)}`,
+//         s = `0x${sig.slice(64, 128)}`,
+//         v = web3.toDecimal(sig.slice(128, 130)) + 27;
+//
+//     var data = abi.simpleEncode("multivestBuy(bytes32,uint8,bytes32,bytes32,bool)", h, v, r, s, hashLock);
+//     console.log(SigAddress);
+//     console.log(data.toString('hex'));
+// }
 
-    var data = abi.simpleEncode("multivestBuy(bytes32,uint8,bytes32,bytes32,bool)", h, v, r, s, hashLock);
-    console.log(SigAddress);
-    console.log(data.toString('hex'));
-}
-
-// generateData(SigAddress, "0xb75037df93E6BBbbB80B0E5528acaA34511B1cD0")
+// generateData(SigAddress, "0x4dD93664e39FbB2A229E6A88eb1Da53f4ccc88Ac")
 
 function makeTransaction(instance, value) {
     'use strict';
-    // console.log(h.toString('hex'));
     var h = abi.soliditySHA3(['address', 'bool'], [new BN(web3.eth.accounts[0].substr(2), 16), hashLock]),
         sig = web3.eth.sign(SigAddress, h.toString('hex')).slice(2),
         r = `0x${sig.slice(0, 64)}`,

@@ -44,4 +44,36 @@ contract TestUptickTokenAllocation is UptickTokenAllocation {
         return super.setAllocation(_percentage, _addresses);
     }
 
+    function testAllocateTokens(uint256 _currentTime) public {
+        require(address(uptickICO) != address(0) && address(uptickToken) != address(0));
+
+        if (isTokensDistributed == false) {
+            require(uint8(partners.length) > 0);
+            for (uint8 i = 0; i < partners.length; i++) {
+                Allocation storage allocation = partners[i];
+                uint256 mintedAmount = uptickToken.mint(allocation.destAddress, allocation.amount);
+                require(mintedAmount == allocation.amount);
+            }
+            isTokensDistributed = true;
+        }
+
+        for (uint8 j = 0; j < teams.length; j++) {
+            TeamsAllocation storage team = teams[j];
+            if (uptickICO.icoSince().add(team.period.mul(MONTH_SECONDS)) < team.distributionTime) {
+                continue;
+            }
+            uint256 mul = _currentTime.sub(team.distributionTime).div(team.cliff.mul(MONTH_SECONDS));
+            if (mul < 1) {
+                continue;
+            }
+            if (mul > team.period.div(team.cliff)) {
+                mul = team.period.div(team.cliff);
+            }
+            uint256 minted = uptickToken.mint(team.destAddress, team.cliffAmount.mul(mul));
+            require(minted == team.cliffAmount.mul(mul));
+            team.distributionTime = _currentTime;
+        }
+    }
+
+
 }

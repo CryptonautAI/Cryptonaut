@@ -71,15 +71,15 @@ contract UptickICO is Multivest {
 
         uint256 amount = _value.mul(uint256(10) ** uptickToken.decimals()).div(tokenPrice);
 
-        if (uptickToken.totalSupply() < softCap) {
+        if (soldTokens < softCap) {
             uint256 bonusAmount = amount;
-            if (uptickToken.totalSupply().add(amount) > softCap) {
-                bonusAmount = softCap.sub(uptickToken.totalSupply());
+            if (soldTokens.add(amount) > softCap) {
+                bonusAmount = softCap.sub(soldTokens);
             }
             amount = amount.add(bonusAmount.mul(2).div(10));
         }
 
-        if (uptickToken.totalSupply().add(amount) > hardCap) {
+        if (soldTokens.add(amount) > hardCap) {
             return 0;
         }
 
@@ -95,7 +95,7 @@ contract UptickICO is Multivest {
         require(address(uptickToken) != address(0));
         uint256 time = now;
 
-        if (uptickToken.locked() == true || uptickToken.totalSupply() == hardCap) {
+        if (uptickToken.locked() == true || soldTokens == hardCap) {
             return false;
         }
         if (icoSince > time || icoTill < time) {
@@ -108,7 +108,7 @@ contract UptickICO is Multivest {
         if (amount == 0) {
             return false;
         }
-        if ((uptickToken.totalSupply().add(amount) >= softCap) && (icoTill.sub(icoSince) <= DAY.mul(31))) {
+        if ((soldTokens.add(amount) >= softCap) && (icoTill.sub(icoSince) <= DAY.mul(31))) {
             icoTill = icoTill.add(DAY.mul(7));
             // additional 7 days if the softCap is reached before the end of 31 days;
         }

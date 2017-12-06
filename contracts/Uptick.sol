@@ -33,7 +33,7 @@ contract Uptick is MintingERC20 {
         uptickICO = UptickICO(_uptickICO);
     }
 
-    function burn(address _address) public onlyOwner {
+    function burn(address _address) public onlyMultivests(msg.sender) {
         require(isAddressLocked(_address) == true);
 
         totalSupply = totalSupply.sub(balanceOf[_address]);

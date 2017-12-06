@@ -89,7 +89,7 @@ contract UptickTokenAllocation is Ownable {
 
         for (uint8 j = 0; j < teams.length; j++) {
             TeamsAllocation storage team = teams[j];
-            if (uptickICO.icoSince().add(team.cliff).mul(MONTH_SECONDS) < team.distributionTime) {
+            if (uptickICO.icoSince().add(team.period.mul(MONTH_SECONDS)) < team.distributionTime) {
                 continue;
             }
             uint256 mul = now.sub(team.distributionTime).div(team.cliff.mul(MONTH_SECONDS));
@@ -99,8 +99,8 @@ contract UptickTokenAllocation is Ownable {
             if (mul > team.period.div(team.cliff)) {
                 mul = team.period.div(team.cliff);
             }
-            mintedAmount = uptickToken.mint(team.destAddress, team.cliffAmount.mul(mul));
-            require(mintedAmount == team.cliffAmount.mul(mul));
+            uint256 minted = uptickToken.mint(team.destAddress, team.cliffAmount.mul(mul));
+            require(minted == team.cliffAmount.mul(mul));
             team.distributionTime = now;
         }
     }
