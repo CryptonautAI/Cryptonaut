@@ -59,17 +59,18 @@ contract TestUptickTokenAllocation is UptickTokenAllocation {
 
         for (uint8 j = 0; j < teams.length; j++) {
             TeamsAllocation storage team = teams[j];
-            if (uptickICO.icoSince().add(team.period.mul(MONTH_SECONDS)) < team.distributionTime) {
-                continue;
-            }
+
             uint256 mul = _currentTime.sub(team.distributionTime).div(team.cliff.mul(MONTH_SECONDS));
             if (mul < 1) {
                 continue;
             }
-            if (mul > team.period.div(team.cliff)) {
-                mul = team.period.div(team.cliff);
+            uint256 allocatedPeriods = team.distributionTime.sub(uptickICO.icoSince()).div(team.cliff.mul(MONTH_SECONDS));
+            if (mul + allocatedPeriods > team.period.div(team.cliff)) {
+                mul = team.period.div(team.cliff).sub(allocatedPeriods);
             }
+
             uint256 minted = uptickToken.mint(team.destAddress, team.cliffAmount.mul(mul));
+
             require(minted == team.cliffAmount.mul(mul));
             team.distributionTime = _currentTime;
         }

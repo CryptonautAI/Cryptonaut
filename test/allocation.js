@@ -224,6 +224,30 @@ contract('UptickTokenAllocation', function (accounts) {
             .then(() => Utils.balanceShouldEqualTo(UptickToken, accounts[11], new BigNumber('5200000').mul(precision).valueOf()))
     });
 
+    it('deploy & check vesting allocation 5', async function () {
+        var ICOSince = parseInt(new Date().getTime() / 1000),
+            softCap = new BigNumber(10000).mul(2400).mul(precision),
+            hardCap = new BigNumber((40000 * 2000) + (10000 * 2400)).mul(precision);
+        await deploy(ICOSince, softCap, hardCap)
+            .then(() => Utils.balanceShouldEqualTo(UptickToken, accounts[10], new BigNumber('0').mul(precision).valueOf()))
+            .then(() => Utils.balanceShouldEqualTo(UptickToken, accounts[11], new BigNumber('0').mul(precision).valueOf()))
+
+            .then(() => UptickAllocationContract.testAllocateTokens(parseInt(new Date().getTime() / 1000) + monthSeconds * 9))
+            .then(Utils.receiptShouldSucceed)
+
+            // 10400000 / 2 = 5200000 | 5200000 * 9/12 = 3900000
+            .then(() => Utils.balanceShouldEqualTo(UptickToken, accounts[10], new BigNumber('3900000').mul(precision).valueOf()))
+            .then(() => Utils.balanceShouldEqualTo(UptickToken, accounts[11], new BigNumber('3900000').mul(precision).valueOf()))
+            //
+            .then(() => UptickAllocationContract.testAllocateTokens(parseInt(new Date().getTime() / 1000) + monthSeconds * 18))
+            .then(Utils.receiptShouldSucceed)
+
+            // 10400000 / 2 = 5200000 | 5200000 * 12/12 = 5200000
+            .then(() => Utils.balanceShouldEqualTo(UptickToken, accounts[10], new BigNumber('5200000').mul(precision).valueOf()))
+            .then(() => Utils.balanceShouldEqualTo(UptickToken, accounts[11], new BigNumber('5200000').mul(precision).valueOf()))
+
+    });
+
     it("test setTeamAllocation && setAllocation functions", async function () {
         let ICOSince = parseInt(new Date().getTime() / 1000) - monthSeconds * 15,
             softCap = new BigNumber(10000).mul(2400).mul(precision),
