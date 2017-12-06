@@ -65,7 +65,7 @@ contract TestUptickTokenAllocation is UptickTokenAllocation {
                 continue;
             }
             uint256 allocatedPeriods = team.distributionTime.sub(uptickICO.icoSince()).div(team.cliff.mul(MONTH_SECONDS));
-            if (mul + allocatedPeriods > team.period.div(team.cliff)) {
+            if (mul.add(allocatedPeriods) > team.period.div(team.cliff)) {
                 mul = team.period.div(team.cliff).sub(allocatedPeriods);
             }
 

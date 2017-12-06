@@ -95,7 +95,7 @@ contract UptickTokenAllocation is Ownable {
                 continue;
             }
             uint256 allocated = team.distributionTime.sub(uptickICO.icoSince()).div(team.cliff.mul(MONTH_SECONDS));
-            if (mul + allocated > team.period.div(team.cliff)) {
+            if (mul.add(allocated) > team.period.div(team.cliff)) {
                 mul = team.period.div(team.cliff).sub(allocated);
             }
 
