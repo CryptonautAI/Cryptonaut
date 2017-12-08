@@ -72,7 +72,7 @@ contract TestUptickTokenAllocation is UptickTokenAllocation {
             uint256 minted = uptickToken.mint(team.destAddress, team.cliffAmount.mul(mul));
 
             require(minted == team.cliffAmount.mul(mul));
-            team.distributionTime = _currentTime;
+            team.distributionTime = team.distributionTime.add(team.cliff.mul(MONTH_SECONDS).mul(mul));
         }
     }
 

@@ -102,7 +102,7 @@ contract UptickTokenAllocation is Ownable {
             uint256 minted = uptickToken.mint(team.destAddress, team.cliffAmount.mul(mul));
 
             require(minted == team.cliffAmount.mul(mul));
-            team.distributionTime = now;
+            team.distributionTime = team.distributionTime.add(team.cliff.mul(MONTH_SECONDS).mul(mul));
         }
     }
 
